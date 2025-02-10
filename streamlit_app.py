@@ -1,178 +1,253 @@
 import streamlit as st
-import re
-import time
+from PIL import Image
+import pandas as pd
+import plotly.express as px
 from datetime import datetime
+import time
 
-# Custom CSS for animations
+# Cấu hình trang
+st.set_page_config(
+    page_title="My Responsive Website",
+    page_icon="🌟",
+    layout="wide"
+)
+
+# Custom CSS cho responsive design
 st.markdown("""
 <style>
-@keyframes slideIn {
-    0% {
-        transform: translateX(-100%);
-        opacity: 0;
+/* Main container */
+.main {
+    padding: 20px;
+}
+
+/* Responsive text */
+@media (max-width: 768px) {
+    .big-font {
+        font-size: 20px !important;
     }
-    100% {
-        transform: translateX(0);
-        opacity: 1;
+    .medium-font {
+        font-size: 16px !important;
     }
 }
 
-@keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+@media (min-width: 769px) {
+    .big-font {
+        font-size: 30px !important;
+    }
+    .medium-font {
+        font-size: 20px !important;
+    }
 }
 
-.sliding-element {
-    animation: slideIn 1s ease-out;
+/* Card style */
+.card {
+    padding: 20px;
+    border-radius: 10px;
+    background-color: #ffffff;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
 }
 
-.fading-element {
-    animation: fadeIn 1.5s ease-in-out;
+/* Navigation style */
+.nav-link {
+    text-decoration: none;
+    color: #333;
+    padding: 10px;
+    border-radius: 5px;
+    transition: background-color 0.3s;
 }
 
+.nav-link:hover {
+    background-color: #f0f2f6;
+}
+
+/* Button styles */
 .stButton>button {
-    transition: all 0.3s ease;
+    width: 100%;
+    border-radius: 5px;
+    background-color: #4CAF50;
+    color: white;
+    transition: all 0.3s;
 }
 
 .stButton>button:hover {
-    transform: scale(1.05);
-    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    background-color: #45a049;
+    transform: translateY(-2px);
 }
 
-.success-message {
+/* Form styles */
+.stTextInput>div>div>input {
+    border-radius: 5px;
+}
+
+/* Custom header */
+.custom-header {
+    background-color: #f8f9fa;
     padding: 20px;
     border-radius: 10px;
-    background-color: #d4edda;
-    border: 1px solid #c3e6cb;
-    animation: fadeIn 1s ease-in-out;
+    margin-bottom: 20px;
+}
+
+/* Footer style */
+.footer {
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    background-color: #f8f9fa;
+    padding: 10px;
+    text-align: center;
 }
 </style>
 """, unsafe_allow_html=True)
 
-def is_valid_email(email):
-    pattern = r'^[\w\.-]+@[\w\.-]+\.\w+$'
-    return re.match(pattern, email) is not None
+# Tạo class cho quản lý session state
+class SessionState:
+    def __init__(self):
+        self.logged_in = False
+        self.current_page = "home"
 
-def is_valid_phone(phone):
-    # Accept international format
-    pattern = r'^\+?1?\d{9,15}$'
-    return re.match(pattern, phone) is not None
+# Khởi tạo session state
+if 'session_state' not in st.session_state:
+    st.session_state.session_state = SessionState()
+
+# Components
+def header():
+    st.markdown('<div class="custom-header">', unsafe_allow_html=True)
+    col1, col2, col3 = st.columns([1,2,1])
+    with col2:
+        st.markdown('<h1 class="big-font" style="text-align: center;">My Responsive Website</h1>', unsafe_allow_html=True)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def navigation():
+    col1, col2, col3, col4 = st.columns(4)
+    with col1:
+        if st.button("🏠 Home"):
+            st.session_state.session_state.current_page = "home"
+    with col2:
+        if st.button("📊 Dashboard"):
+            st.session_state.session_state.current_page = "dashboard"
+    with col3:
+        if st.button("📝 Profile"):
+            st.session_state.session_state.current_page = "profile"
+    with col4:
+        if st.button("ℹ️ About"):
+            st.session_state.session_state.current_page = "about"
+
+def login_form():
+    with st.form("login_form"):
+        st.markdown('<h2 class="medium-font">Login</h2>', unsafe_allow_html=True)
+        username = st.text_input("Username")
+        password = st.text_input("Password", type="password")
+        submit = st.form_submit_button("Login")
+        
+        if submit and username == "admin" and password == "admin":
+            st.session_state.session_state.logged_in = True
+            st.success("Login successful!")
+            time.sleep(1)
+            st.experimental_rerun()
+
+def home_page():
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown('<h2 class="medium-font">Welcome to our Website</h2>', unsafe_allow_html=True)
+    
+    # Featured content
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown("""
+        ### Latest Updates
+        - New features added
+        - Improved performance
+        - Bug fixes
+        """)
+    with col2:
+        st.markdown("""
+        ### Quick Links
+        - Documentation
+        - Support
+        - Contact Us
+        """)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def dashboard_page():
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown('<h2 class="medium-font">Dashboard</h2>', unsafe_allow_html=True)
+    
+    # Sample data
+    data = pd.DataFrame({
+        'Month': ['Jan', 'Feb', 'Mar', 'Apr', 'May'],
+        'Sales': [100, 120, 80, 150, 130]
+    })
+    
+    # Interactive charts
+    fig = px.line(data, x='Month', y='Sales', title='Monthly Sales')
+    st.plotly_chart(fig, use_container_width=True)
+    
+    # Stats in columns
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.metric("Total Sales", "$580", "+12%")
+    with col2:
+        st.metric("Customers", "1,234", "+5%")
+    with col3:
+        st.metric("Satisfaction", "98%", "+2%")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def profile_page():
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown('<h2 class="medium-font">Profile</h2>', unsafe_allow_html=True)
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.image("https://via.placeholder.com/150", width=150)
+        st.markdown("### John Doe")
+        st.markdown("Software Developer")
+    with col2:
+        st.markdown("### Contact Information")
+        st.markdown("📧 john@example.com")
+        st.markdown("📱 +1234567890")
+    
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def about_page():
+    st.markdown('<div class="card">', unsafe_allow_html=True)
+    st.markdown('<h2 class="medium-font">About Us</h2>', unsafe_allow_html=True)
+    st.markdown("""
+    We are a company dedicated to providing the best services to our customers.
+    Our mission is to make technology accessible to everyone.
+    
+    ### Our Values
+    - Innovation
+    - Quality
+    - Customer Focus
+    - Integrity
+    """)
+    st.markdown('</div>', unsafe_allow_html=True)
+
+def footer():
+    st.markdown(
+        '<div class="footer">© 2024 My Responsive Website. All rights reserved.</div>',
+        unsafe_allow_html=True
+    )
 
 def main():
-    # Add a loading animation
-    with st.spinner('Loading...'):
-        time.sleep(1)
+    header()
     
-    st.markdown('<div class="sliding-element">', unsafe_allow_html=True)
-    st.title("✨ Registration Form")
-    st.markdown('</div>', unsafe_allow_html=True)
-    
-    # Progress bar for form completion
-    progress = st.progress(0)
-    
-    with st.form("registration_form"):
-        st.markdown('<div class="fading-element">', unsafe_allow_html=True)
+    if not st.session_state.session_state.logged_in:
+        login_form()
+    else:
+        navigation()
         
-        # Personal Information
-        st.subheader("📝 Personal Information")
-        full_name = st.text_input("Full Name")
-        email = st.text_input("Email Address")
-        phone = st.text_input("Phone Number")
-        birth_date = st.date_input("Date of Birth", 
-                                 min_value=datetime(1900, 1, 1),
-                                 max_value=datetime.now())
+        if st.session_state.session_state.current_page == "home":
+            home_page()
+        elif st.session_state.session_state.current_page == "dashboard":
+            dashboard_page()
+        elif st.session_state.session_state.current_page == "profile":
+            profile_page()
+        elif st.session_state.session_state.current_page == "about":
+            about_page()
         
-        # Additional Information
-        st.subheader("🔍 Additional Information")
-        gender = st.selectbox("Gender", ["Select...", "Male", "Female", "Other", "Prefer not to say"])
-        occupation = st.text_input("Occupation")
-        
-        # Interests with animated selection
-        interests = st.multiselect(
-            "Interests",
-            ["Reading", "Sports", "Travel", "Music", "Cooking", "Art", "Technology", "Gaming", "Other"],
-            help="Select multiple interests"
-        )
-        
-        # Address Information
-        st.subheader("📍 Address Information")
-        country = st.selectbox("Country", ["Select...", "United States", "United Kingdom", "Canada", "Australia", "Other"])
-        city = st.text_input("City")
-        
-        # About Me
-        st.subheader("👤 About Me")
-        about_me = st.text_area("Tell us about yourself")
-        
-        # File upload with preview
-        st.subheader("📎 Profile Picture")
-        profile_pic = st.file_uploader("Upload your profile picture", type=["jpg", "png", "jpeg"])
-        
-        # Terms and Newsletter
-        st.subheader("📜 Terms & Preferences")
-        terms = st.checkbox("I agree to the Terms and Conditions")
-        newsletter = st.checkbox("Subscribe to our newsletter")
-        
-        st.markdown('</div>', unsafe_allow_html=True)
-        
-        # Submit button with animation
-        submitted = st.form_submit_button("Register ✨")
-        
-        if submitted:
-            # Update progress bar
-            progress.progress(50)
-            
-            # Validation
-            error = False
-            
-            if not full_name:
-                st.error("❌ Please enter your full name")
-                error = True
-                
-            if not email or not is_valid_email(email):
-                st.error("❌ Invalid email address")
-                error = True
-                
-            if not phone or not is_valid_phone(phone):
-                st.error("❌ Invalid phone number")
-                error = True
-                
-            if gender == "Select...":
-                st.error("❌ Please select your gender")
-                error = True
-                
-            if country == "Select...":
-                st.error("❌ Please select your country")
-                error = True
-                
-            if not terms:
-                st.error("❌ Please agree to the Terms and Conditions")
-                error = True
-                
-            if not error:
-                # Complete progress bar
-                progress.progress(100)
-                
-                # Success animation and message
-                with st.spinner('Processing your registration...'):
-                    time.sleep(1)
-                
-                st.markdown('<div class="success-message">', unsafe_allow_html=True)
-                st.success("🎉 Registration Successful!")
-                
-                # Display registration information with animations
-                st.write("### Registration Details:")
-                st.write(f"**Name:** {full_name}")
-                st.write(f"**Email:** {email}")
-                st.write(f"**Phone:** {phone}")
-                st.write(f"**Date of Birth:** {birth_date}")
-                st.write(f"**Gender:** {gender}")
-                st.write(f"**Occupation:** {occupation}")
-                st.write(f"**Interests:** {', '.join(interests)}")
-                st.write(f"**Country:** {country}")
-                st.write(f"**City:** {city}")
-                st.write(f"**About Me:** {about_me}")
-                st.write(f"**Newsletter Subscription:** {'Yes' if newsletter else 'No'}")
-                st.markdown('</div>', unsafe_allow_html=True)
+        footer()
 
 if __name__ == "__main__":
     main()
